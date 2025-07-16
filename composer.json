@@ -1,0 +1,20 @@
+{
+    "name": "frugal-php/orm",
+    "description": "Orm for frugal-php",
+    "type": "library",
+    "require": {
+        "clue/reactphp-sqlite": "^1.7",
+        "react/async": "^4.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "FrugalPhpPlugin\\Orm\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Grégory COLLIN",
+            "email": "gregory@badass-coding.com"
+        }
+    ]
+}
