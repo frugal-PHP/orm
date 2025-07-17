@@ -9,26 +9,19 @@ final class SqliteDatabase implements DatabaseInterface
 {
     private \Clue\React\SQLite\DatabaseInterface $client;
 
-    public static function create(string $databasePathName, int $timeout = 3000) : PromiseInterface
-    {
-        $self = new self();
+    public function __construct(string $databasePathName) {
         $factory = new \Clue\React\SQLite\Factory(Loop::get());
-
-        return $factory->open($databasePathName)
-            ->then(function($client) use ($timeout, $self) {
-                $client->exec("PRAGMA busy_timeout = $timeout");
-                $this->client = $client;
-                return $self;
-            });
+        $this->client = $factory->openLazy($databasePathName);
+        $this->client->exec("PRAGMA busy_timeout = 3000");
     }
 
     public function execute(string $query, array $parameters = []) : PromiseInterface
-    {
-        $action = strtoupper(strtok(ltrim($query), " \t\n\r"));
-        if(strtoupper($action) === "SELECT") {
-            return $this->client->query($query, $parameters);
-        }
-        
+    {        
         return $this->client->query($query, $parameters);
+    }
+
+    public function close(): void
+    {
+        $this->client->quit();
     }
 }
