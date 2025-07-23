@@ -4,12 +4,13 @@ namespace FrugalPhpPlugin\Orm\Repositories;
 
 use FrugalPhpPlugin\Orm\Services\DatabaseInterface;
 use FrugalPhpPlugin\Orm\Entities\AbstractEntity;
+use FrugalPhpPlugin\Orm\Helpers\HydratorHelper;
 use React\Promise\PromiseInterface;
 
 abstract class AbstractRepository
 {
     protected array $entityFields;
-    protected array $entityTableName;
+    protected string $entityTableName;
     protected string $entityPrimaryKeyName;
 
     public function __construct(
@@ -28,7 +29,11 @@ abstract class AbstractRepository
         $query = "SELECT * FROM ".$this->entityTableName." WHERE ".$this->entityPrimaryKeyName."= :id";
         $parameters = [':id' => $primaryKeyValue];
 
-        return $this->db->execute($query, $parameters);
+        return $this->db->execute($query, $parameters)
+            ->then(function(array $row) {
+                $className = $this->getManagedEntityClass();
+                return empty($row) ? null : HydratorHelper::hydrate(row: $row, entity: new $className);
+            });
     }
 
     private function buildInsertQuery() : string

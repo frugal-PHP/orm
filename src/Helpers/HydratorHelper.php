@@ -2,20 +2,18 @@
 
 namespace FrugalPhpPlugin\Orm\Helpers;
 
-use Clue\React\SQLite\Result;
-use FrugalPhpPlugin\Orm\Entities\AbstractEntities;
+use FrugalPhpPlugin\Orm\Entities\AbstractEntity;
 
 final class HydratorHelper
 {
     public static function hydrate(
-        Result $result,
-        AbstractEntities $entity
-    ) : AbstractEntities
+        array $row,
+        AbstractEntity $entity
+    ) : AbstractEntity
     {
-        $rows = current($result->rows);
         foreach ($entity::getFields() as $classField => $databaseField) {
-            if (isset($rows[$databaseField])) {
-                $entity->$classField = $rows[$databaseField];
+            if (isset($row[$databaseField])) {
+                $entity->$classField = $row[$databaseField];
             }
         }
 

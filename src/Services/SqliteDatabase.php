@@ -2,6 +2,7 @@
 
 namespace FrugalPhpPlugin\Orm\Services;
 
+use Clue\React\SQLite\Result;
 use React\EventLoop\Loop;
 use React\Promise\PromiseInterface;
 
@@ -17,7 +18,10 @@ final class SqliteDatabase implements DatabaseInterface
 
     public function execute(string $query, array $parameters = []) : PromiseInterface
     {        
-        return $this->client->query($query, $parameters);
+        return $this->client->query($query, $parameters)
+        ->then(function(Result $result) {
+            return $result->rows;
+        });
     }
 
     public function close(): void
