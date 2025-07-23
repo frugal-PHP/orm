@@ -25,8 +25,9 @@ class Plugin extends AbstractPlugin
             );
 
         // Check si tout est en place
-        if(!file_exists(getenv('ROOT_DIR')."/".getenv('DATABASE_STORAGE_PATH'))) {
-            throw new Exception("Le répertoire de stockage de la base de donnée n'est pas accessible");
+        $databaseStockagePath = getenv('ROOT_DIR')."/".getenv('DATABASE_STORAGE_PATH');
+        if(!is_dir($databaseStockagePath)) {
+            throw new Exception("Le répertoire de stockage de la base de donnée n'est pas accessible :".$databaseStockagePath);
         }
     }
 
