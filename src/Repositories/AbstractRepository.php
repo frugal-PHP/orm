@@ -32,7 +32,7 @@ abstract class AbstractRepository
         return $this->db->execute($query, $parameters)
             ->then(function(array $row) {
                 $className = $this->getManagedEntityClass();
-                return empty($row) ? null : HydratorHelper::hydrate(row: $row, entity: new $className);
+                return empty($row) ? null : HydratorHelper::hydrate(row: current($row), entity: new $className);
             });
     }
 
@@ -41,7 +41,7 @@ abstract class AbstractRepository
         $columns = implode(', ', array_values($this->entityFields));
         $placeholders = implode(', ', array_map(fn($key) => ':' . $this->entityFields[$key], array_keys($this->entityFields)));
 
-        return "INSERT INTO ".$this->entityTableName."($columns) VALUES ($placeholders)";
+        return "INSERT INTO `".$this->entityTableName."`($columns) VALUES ($placeholders)";
     }
 
     private function buildUpdateQuery() : string
@@ -53,11 +53,11 @@ abstract class AbstractRepository
         return "UPDATE ".$this->entityTableName." SET $placeholders WHERE $this->entityPrimaryKeyName=:$this->entityPrimaryKeyName";
     }
 
-    private function buildParameters(AbstractEntity $entity): array
+    private function buildParameters(array $values): array
     {
         $params = [];
         foreach ($this->entityFields as $classFieldName => $bddFieldName) {
-            $params[":$bddFieldName"] = $entity->$classFieldName;
+            $params[":$bddFieldName"] = $values[$classFieldName];
         }
 
         return $params;
@@ -66,7 +66,7 @@ abstract class AbstractRepository
     public function create(AbstractEntity $entity) : PromiseInterface
     {
         $query = $this->buildInsertQuery();
-        $parameters = $this->buildParameters($entity);
+        $parameters = $this->buildParameters($entity->toDatabase());
 
         return $this->db->execute(query: $query, parameters: $parameters);
     }
@@ -74,7 +74,7 @@ abstract class AbstractRepository
     public function update(AbstractEntity $entity): PromiseInterface
     {
         $query = $this->buildUpdateQuery();
-        $parameters = $this->buildParameters($entity);
+        $parameters = $this->buildParameters($entity->toDatabase());
 
         return $this->db->execute(query: $query, parameters: $parameters);
     }

@@ -13,7 +13,11 @@ final class HydratorHelper
     {
         foreach ($entity::getFields() as $classField => $databaseField) {
             if (isset($row[$databaseField])) {
-                $entity->$classField = $row[$databaseField];
+                if( method_exists($entity, 'set'.ucfirst($classField))) {
+                    $entity->{'set'.ucfirst($classField)}($row[$databaseField]);
+                } else {
+                    $entity->$classField = $row[$databaseField];                    
+                }
             }
         }
 
