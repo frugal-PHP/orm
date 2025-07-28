@@ -48,7 +48,7 @@ abstract class AbstractRepository
     {
         $fields = $this->entityFields;
         unset($fields[$this->entityPrimaryKeyName]);
-        $placeholders = implode(', ', array_map(fn($key) => $key.'=:' . $key, array_keys($fields)));
+        $placeholders = implode(', ', array_map(fn($bddFieldName) => $bddFieldName.'=:' . $bddFieldName, array_values($fields)));
 
         return "UPDATE ".$this->entityTableName." SET $placeholders WHERE $this->entityPrimaryKeyName=:$this->entityPrimaryKeyName";
     }
