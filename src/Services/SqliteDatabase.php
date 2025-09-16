@@ -2,6 +2,7 @@
 
 namespace FrugalPhpPlugin\Orm\Services;
 
+use Clue\React\SQLite\DatabaseInterface as SQLiteDatabaseInterface;
 use Clue\React\SQLite\Result;
 use React\EventLoop\Loop;
 use React\Promise\PromiseInterface;
@@ -14,14 +15,23 @@ final class SqliteDatabase implements DatabaseInterface
         $factory = new \Clue\React\SQLite\Factory(Loop::get());
         $this->client = $factory->openLazy($databasePathName);
         $this->client->exec("PRAGMA busy_timeout = 3000");
+        $this->client->exec("PRAGMA foreign_keys = ON");
+
+    }
+    public function getDB() : SQLiteDatabaseInterface
+    {
+        return $this->client;
     }
 
-    public function execute(string $query, array $parameters = []) : PromiseInterface
+    public function execute(
+        string $query, 
+        array $parameters = [], 
+        ?int $paginationThreshold = null
+    ) : PromiseInterface
     {        
-        return $this->client->query($query, $parameters)
-        ->then(function(Result $result) {
-            return $result->rows;
-        });
+        return $this->client
+            ->query($query, $parameters)
+            ->then(fn(Result $result) => $result->rows);
     }
 
     public function close(): void

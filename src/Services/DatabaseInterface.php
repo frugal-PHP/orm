@@ -6,5 +6,5 @@ use React\Promise\PromiseInterface;
 
 interface DatabaseInterface
 {
-    public function execute(string $query, array $parameters = []) : PromiseInterface;
+    public function execute(string $query, array $parameters = [], ?int $paginationThreshold = null) : PromiseInterface;
 }
