@@ -29,6 +29,7 @@ abstract class AbstractRepository
     public function findOneById($id) : PromiseInterface
     {   
         return $this->findBy(['uuid' => $id])
+            ->then(fn($result) => $this->db->getRows($result))
             ->then(function(array $rows) {
                 if(empty($rows)) {
                     throw new EntityNotFoundException(message: "Entity not found or you don't have the right to get it.");
@@ -36,13 +37,14 @@ abstract class AbstractRepository
                 if(count($rows) > 1) {
                     throw new Exception("Not unique entity but findOneById called");
                 }
-                return $this->getManagedEntityClass()::fromArray(current($rows));
+                return $this->getManagedEntityClass()::createFromArray(current($rows));
             });
     }
 
     public function findOneBy(array $properties) : PromiseInterface
     {
         return $this->findBy($properties)
+            ->then(fn($result) => $this->db->getRows($result))
             ->then(function(array $rows) {
                 if(empty($rows)) {
                     throw new EntityNotFoundException(message: "Entity not found or you don't have the right to get it.");
@@ -50,7 +52,7 @@ abstract class AbstractRepository
                 if(count($rows) > 1) {
                     throw new Exception("Not unique entity but findOneBy called");
                 }
-                return $this->getManagedEntityClass()::fromArray(current($rows));
+                return $this->getManagedEntityClass()::createFromArray(current($rows));
             });
     }
 
@@ -61,14 +63,13 @@ abstract class AbstractRepository
         }
 
         // On va check que les clefs sont valides pour notre entité.
-        if(array_diff(array_keys($this->entityFields), array_keys($properties))) {
+        if(array_diff(array_keys($properties), array_keys($this->entityFields))) {
             throw new InvalidArgumentException(message: "Invalid entity fields in properties argument");
         }
         
         $whereConditions = ["1=1"];
         foreach($properties as $entityFieldName => $value) {
             $col = $this->entityFields[$entityFieldName];
-
             if ($value === null) {
                 $whereConditions[] = "$col IS NULL";
                 continue;
@@ -132,7 +133,7 @@ abstract class AbstractRepository
         $query = $this->buildInsertQuery();
         $parameters = $this->buildParameters($entity->toDatabase());
 
-        return $this->db->execute(query: $query, parameters: $parameters);
+        return $this->db->execute(query: $query, parameters: $parameters);        
     }
 
     public function update(AbstractEntity $entity): PromiseInterface
@@ -156,17 +157,17 @@ abstract class AbstractRepository
     private function buildInsertQuery() : string
     {
         $columns = implode(', ', array_values($this->entityFields));
-        $placeholders = implode(', ', array_map(fn($key) => ':' . $this->entityFields[$key], array_keys($this->entityFields)));
+        $placeholders = implode(', ', array_map(fn($key) => ':' . $key, array_keys($this->entityFields)));
 
         return "INSERT OR REPLACE INTO `".$this->entityTableName."`($columns) VALUES ($placeholders)";
     }
 
     private function buildUpdateQuery() : string
     {
-        $fields = array_diff($this->entityFields, $this->entityPrimaryKeyNames);
+        $fields = array_diff($this->entityFields, $this->entityPrimaryKeyName);
         $placeholders = implode(', ', array_map(fn($bddFieldName) => $bddFieldName.'=:' . $bddFieldName, array_values($fields)));
 
-        $whereClause = implode(" AND ", array_map(fn($primaryKeyFieldName) => $primaryKeyFieldName.'=:'.$primaryKeyFieldName, $this->entityPrimaryKeyNames));
+        $whereClause = implode(" AND ", array_map(fn($primaryKeyFieldName) => $primaryKeyFieldName.'=:'.$primaryKeyFieldName, $this->entityPrimaryKeyName));
         return "UPDATE ".$this->entityTableName." SET $placeholders WHERE $whereClause";
     }
 
@@ -181,10 +182,10 @@ abstract class AbstractRepository
             $val = $values[$classFieldName];
             if(is_array($val)) {
                 foreach(array_values($val) as $index => $value) {
-                    $params[":$bddFieldName"."_$index"] = $value;
+                    $params[":$$classFieldName"."_$index"] = $value;
                 }
             } else {
-                $params[":$bddFieldName"] = $val;
+                $params[":$classFieldName"] = $val;
             }
         }
 

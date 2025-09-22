@@ -3,7 +3,6 @@
 namespace FrugalPhpPlugin\Orm\Entities;
 
 use Frugal\Core\Services\FrugalContainer;
-use FrugalPhpPlugin\Orm\Repositories\AbstractRepository;
 use RuntimeException;
 
 trait EntityCacheTrait
@@ -11,10 +10,10 @@ trait EntityCacheTrait
     protected static array $fieldsCache = [];
     protected static array $tableNamesCache = [];
     protected static array $primaryKeyNamesCache = [];
-    protected static AbstractRepository $repositoriesClassCache;
+    protected static array $repositoriesClassCache = [];
 
     static private function populateCache() : void
-    {
+    {        
         $reflection = new \ReflectionClass(static::class);
 
         static::populateFieldsCache($reflection);
@@ -40,6 +39,9 @@ trait EntityCacheTrait
         $fields = [];
 
         foreach ($reflection->getProperties() as $property) {
+            if($property->class !== static::class) {
+                continue;
+            }
             $name = $property->getName();
 
             // Utiliser un attribut #[Column(name: "xxx")] si précisé
@@ -47,13 +49,9 @@ trait EntityCacheTrait
             if ($attributes) {
                 /** @var \Doctrine\ORM\Mapping\Column $column */
                 $column = $attributes[0]->newInstance();
-                $columnName = $column->name ?? $name;
-            } else {
-                // Sinon, appliquer la naming strategy (camelCase -> snake_case)
-                $columnName = strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $name));
+                $columnName = $column->name ?? strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $name));
+                $fields[$name] = $columnName;
             }
-
-            $fields[$name] = $columnName;
         }
 
         static::$fieldsCache[static::class] = $fields;

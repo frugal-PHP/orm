@@ -21,7 +21,7 @@ abstract class AbstractEntity
 
             $value = $this->$property;
 
-            $output[$column] = match (true) {
+            $output[$property] = match (true) {
                 $value instanceof \Ramsey\Uuid\UuidInterface => $value->toString(),
                 $value instanceof \BackedEnum => $value->value,
                 $value instanceof \DateTimeInterface => $value->format(DATE_ATOM),
@@ -29,7 +29,7 @@ abstract class AbstractEntity
                 default => $value,
             };
         }
-        
+
         return $output;
     }
 

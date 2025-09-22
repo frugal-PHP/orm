@@ -31,7 +31,7 @@ class Plugin extends AbstractPlugin
     protected static function registerServices(): void
     {
         $frugalContainer = FrugalContainer::getInstance();
-        $frugalContainer->set('orm', fn() => new SqliteDatabase(getenv('ROOT_DIR')."/".getenv('DATABASE_STORAGE_PATH')."/".getenv('DATABASE_SQLITE_FILENAME')));
+        $frugalContainer->set('orm', fn() => new SqliteDatabase(getenv('DATABASE_FILEPATH')));
         $frugalContainer->set('repositoryLocator', fn() => new RepositoryLocator());
     }
 }

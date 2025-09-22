@@ -3,8 +3,8 @@
 namespace FrugalPhpPlugin\Orm\Services;
 
 use Frugal\Core\Services\FrugalContainer;
+use FrugalPhpPlugin\Orm\Repositories\AbstractRepository;
 use InvalidArgumentException;
-use Pahada\Tracks\Repositories\AbstractRepository;
 use RuntimeException;
 
 class RepositoryLocator

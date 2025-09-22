@@ -18,24 +18,34 @@ final class SqliteDatabase implements DatabaseInterface
         $this->client->exec("PRAGMA foreign_keys = ON");
 
     }
+
     public function getDB() : SQLiteDatabaseInterface
     {
         return $this->client;
     }
 
+    /**
+     * @return PromiseInterface<Result>
+     */
     public function execute(
         string $query, 
         array $parameters = [], 
         ?int $paginationThreshold = null
     ) : PromiseInterface
     {        
-        return $this->client
-            ->query($query, $parameters)
-            ->then(fn(Result $result) => $result->rows);
+        return $this->client->query($query, $parameters);
     }
 
     public function close(): void
     {
         $this->client->quit();
+    }
+
+    /**
+     * @var Result $result
+     */
+    public function getRows($result) : array 
+    {
+        return $result->rows ?? [];
     }
 }
