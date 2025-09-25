@@ -2,8 +2,6 @@
 
 namespace FrugalPhpPlugin\Orm\Repositories;
 
-use Exception;
-use FrugalPhpPlugin\Orm\Exceptions\EntityNotFoundException;
 use FrugalPhpPlugin\Orm\Services\DatabaseInterface;
 use FrugalPhpPlugin\Orm\Entities\AbstractEntity;
 use InvalidArgumentException;
@@ -26,36 +24,26 @@ abstract class AbstractRepository
 
     abstract public function getManagedEntityClass() : string;
 
-    public function findOneById($id) : PromiseInterface
-    {   
-        return $this->findBy(['uuid' => $id])
-            ->then(fn($result) => $this->db->getRows($result))
-            ->then(function(array $rows) {
-                if(empty($rows)) {
-                    throw new EntityNotFoundException(message: "Entity not found or you don't have the right to get it.");
-                }
-                if(count($rows) > 1) {
-                    throw new Exception("Not unique entity but findOneById called");
-                }
-                return $this->getManagedEntityClass()::createFromArray(current($rows));
-            });
-    }
-
-    public function findOneBy(array $properties) : PromiseInterface
+    public function getDatabaseManager() : DatabaseInterface
     {
-        return $this->findBy($properties)
-            ->then(fn($result) => $this->db->getRows($result))
-            ->then(function(array $rows) {
-                if(empty($rows)) {
-                    throw new EntityNotFoundException(message: "Entity not found or you don't have the right to get it.");
-                }
-                if(count($rows) > 1) {
-                    throw new Exception("Not unique entity but findOneBy called");
-                }
-                return $this->getManagedEntityClass()::createFromArray(current($rows));
-            });
+        return $this->db;
+    }
+    
+    /**
+     * @return PromiseInterface<array>
+     */
+    public function findAll() : PromiseInterface
+    {
+        $table = '`' . $this->entityTableName . '`';
+        $query   = "SELECT * FROM $table";
+
+        return $this->execute($query, [])
+            ->then(fn($result) => $this->db->getRows($result));
     }
 
+    /**
+     * @return PromiseInterface<array>
+     */
     public function findBy(array $properties) : PromiseInterface
     {
         if(empty($properties)) {
@@ -63,6 +51,7 @@ abstract class AbstractRepository
         }
 
         // On va check que les clefs sont valides pour notre entité.
+        //var_dump($this->entityTableName,array_keys($properties), array_keys($this->entityFields), array_diff(array_keys($properties), array_keys($this->entityFields)));
         if(array_diff(array_keys($properties), array_keys($this->entityFields))) {
             throw new InvalidArgumentException(message: "Invalid entity fields in properties argument");
         }
@@ -96,36 +85,8 @@ abstract class AbstractRepository
         $table = '`' . $this->entityTableName . '`';
         $query   = "SELECT * FROM $table WHERE $whereClause";
 
-        return $this->execute($query, $parameters);
-    }
-
-    public function doesOneExist(array $fields) : PromiseInterface
-    {
-       return $this->checkUnicityConstraint($fields)->then(fn(bool $result) => !$result);
-    }
-
-    public function checkUnicityConstraint(array $fields) : PromiseInterface
-    {
-         if(empty($fields)) {
-            throw new InvalidArgumentException(message: "fields array must contains at least one property");
-        }
-
-        $unknownFields = array_diff(array_keys($fields), array_keys($this->entityFields));
-        if(count($unknownFields) > 0) {
-            throw new InvalidArgumentException(message: "Unknown fields : ".implode(",",$unknownFields));
-        }
-
-        $whereClause = implode(" AND ", array_map(fn($propertyKey) => $this->entityFields[$propertyKey].'=:'.$this->entityFields[$propertyKey], array_keys($fields)));
-
-        $query = "SELECT 1 FROM ".$this->entityTableName." WHERE ".$whereClause." LIMIT 1";
-        $parameters = $this->buildParameters($fields);
-
-        return $this->db->execute(
-            query: $query,
-            parameters: $parameters
-        )
-        ->then(fn($rows) => $rows)
-        ->then(fn(array $rows)  => empty($rows));
+        return $this->execute($query, $parameters)
+            ->then(fn($result) => $this->db->getRows($result));
     }
 
     public function create(AbstractEntity $entity) : PromiseInterface
@@ -165,9 +126,9 @@ abstract class AbstractRepository
     private function buildUpdateQuery() : string
     {
         $fields = array_diff($this->entityFields, $this->entityPrimaryKeyName);
-        $placeholders = implode(', ', array_map(fn($bddFieldName) => $bddFieldName.'=:' . $bddFieldName, array_values($fields)));
-
+        $placeholders = implode(', ', array_map(function($key) use($fields) { return $fields[$key].'=:' . $key; }, array_keys($fields)));
         $whereClause = implode(" AND ", array_map(fn($primaryKeyFieldName) => $primaryKeyFieldName.'=:'.$primaryKeyFieldName, $this->entityPrimaryKeyName));
+
         return "UPDATE ".$this->entityTableName." SET $placeholders WHERE $whereClause";
     }
 

@@ -41,11 +41,15 @@ final class SqliteDatabase implements DatabaseInterface
         $this->client->quit();
     }
 
-    /**
-     * @var Result $result
-     */
     public function getRows($result) : array 
     {
         return $result->rows ?? [];
     }
+
+    public function getLastInsertId($result) : int
+    {
+        return $result->insertId;
+    }
+
+    
 }
