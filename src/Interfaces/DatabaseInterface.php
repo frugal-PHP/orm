@@ -1,6 +1,6 @@
 <?php
 
-namespace FrugalPhpPlugin\Orm\Services;
+namespace FrugalPhpPlugin\Orm\Interfaces;
 
 use React\Promise\PromiseInterface;
 

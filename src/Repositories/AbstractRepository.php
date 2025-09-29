@@ -2,16 +2,17 @@
 
 namespace FrugalPhpPlugin\Orm\Repositories;
 
-use FrugalPhpPlugin\Orm\Services\DatabaseInterface;
 use FrugalPhpPlugin\Orm\Entities\AbstractEntity;
+use FrugalPhpPlugin\Orm\Interfaces\DatabaseInterface;
+use FrugalPhpPlugin\Orm\Interfaces\RepositoryInterface;
 use InvalidArgumentException;
 use React\Promise\PromiseInterface;
+use RuntimeException;
 
-abstract class AbstractRepository
+abstract class AbstractRepository implements RepositoryInterface
 {
     protected array $entityFields;
     protected string $entityTableName;
-    protected array $entityPrimaryKeyName;
 
     public function __construct(
         protected DatabaseInterface $db
@@ -19,7 +20,6 @@ abstract class AbstractRepository
         $entityClassName = $this->getManagedEntityClass();
         $this->entityTableName = $entityClassName::getTableName();
         $this->entityFields = $entityClassName::getFields();
-        $this->entityPrimaryKeyName = $entityClassName::getPrimaryKeyNames();
     }
 
     abstract public function getManagedEntityClass() : string;
@@ -51,7 +51,6 @@ abstract class AbstractRepository
         }
 
         // On va check que les clefs sont valides pour notre entité.
-        //var_dump($this->entityTableName,array_keys($properties), array_keys($this->entityFields), array_diff(array_keys($properties), array_keys($this->entityFields)));
         if(array_diff(array_keys($properties), array_keys($this->entityFields))) {
             throw new InvalidArgumentException(message: "Invalid entity fields in properties argument");
         }
@@ -107,10 +106,10 @@ abstract class AbstractRepository
 
     public function delete(string|int $entityId): PromiseInterface
     {        
-        $parameters[$this->entityPrimaryKeyName] = $entityId;
+        $parameters['id'] = $entityId;
 
         return $this->db->execute(
-            query: "DELETE FROM ".$this->entityTableName." WHERE $this->entityPrimaryKeyName = :".$this->entityPrimaryKeyName,
+            query: "DELETE FROM ".$this->entityTableName." WHERE id = :id",
             parameters: $parameters
         );
     }
@@ -125,22 +124,22 @@ abstract class AbstractRepository
 
     private function buildUpdateQuery() : string
     {
-        $fields = array_diff($this->entityFields, $this->entityPrimaryKeyName);
+        $fields = array_diff($this->entityFields, ['id']);
         $placeholders = implode(', ', array_map(function($key) use($fields) { return $fields[$key].'=:' . $key; }, array_keys($fields)));
-        $whereClause = implode(" AND ", array_map(fn($primaryKeyFieldName) => $primaryKeyFieldName.'=:'.$primaryKeyFieldName, $this->entityPrimaryKeyName));
 
-        return "UPDATE ".$this->entityTableName." SET $placeholders WHERE $whereClause";
+        return "UPDATE ".$this->entityTableName." SET $placeholders WHERE id=:id";
     }
 
     private function buildParameters(array $values): array
     {
         $params = [];
-        foreach ($this->entityFields as $classFieldName => $bddFieldName) {
+        foreach (array_keys($this->entityFields) as $classFieldName) {
             if (!isset($values[$classFieldName])) {
                 continue;
             }
 
-            $val = $values[$classFieldName];
+            $val = (string) $values[$classFieldName];
+
             if(is_array($val)) {
                 foreach(array_values($val) as $index => $value) {
                     $params[":$$classFieldName"."_$index"] = $value;

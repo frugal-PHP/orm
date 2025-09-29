@@ -2,9 +2,10 @@
 
 namespace FrugalPhpPlugin\Orm\Entities;
 
+use FrugalPhpPlugin\Orm\Interfaces\EntityInterface;
 use FrugalPhpPlugin\Orm\Repositories\AbstractRepository;
 
-abstract class AbstractEntity
+abstract class AbstractEntity implements EntityInterface
 {
     use RelationTrait;
     use EntityCacheTrait;
@@ -26,20 +27,11 @@ abstract class AbstractEntity
                 $value instanceof \BackedEnum => $value->value,
                 $value instanceof \DateTimeInterface => $value->format(DATE_ATOM),
                 is_object($value) && property_exists($value, 'value') => $value->value,
-                default => $value,
+                default => (string) $value,
             };
         }
 
         return $output;
-    }
-
-    public static function getPrimaryKeyNames(): array
-    {
-        if (!isset(static::$primaryKeyNamesCache[static::class])) {
-            self::populateCache();
-        }
-
-        return static::$primaryKeyNamesCache[static::class];
     }
 
     static public function getFields() : array

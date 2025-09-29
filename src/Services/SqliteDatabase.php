@@ -4,6 +4,7 @@ namespace FrugalPhpPlugin\Orm\Services;
 
 use Clue\React\SQLite\DatabaseInterface as SQLiteDatabaseInterface;
 use Clue\React\SQLite\Result;
+use FrugalPhpPlugin\Orm\Interfaces\DatabaseInterface;
 use React\EventLoop\Loop;
 use React\Promise\PromiseInterface;
 
@@ -16,7 +17,6 @@ final class SqliteDatabase implements DatabaseInterface
         $this->client = $factory->openLazy($databasePathName);
         $this->client->exec("PRAGMA busy_timeout = 3000");
         $this->client->exec("PRAGMA foreign_keys = ON");
-
     }
 
     public function getDB() : SQLiteDatabaseInterface
@@ -48,8 +48,7 @@ final class SqliteDatabase implements DatabaseInterface
 
     public function getLastInsertId($result) : int
     {
+        var_dump($result->insertId); die;
         return $result->insertId;
     }
-
-    
 }
