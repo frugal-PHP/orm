@@ -4,6 +4,7 @@ namespace FrugalPhpPlugin\Orm\Entities;
 
 use FrugalPhpPlugin\Orm\Interfaces\EntityInterface;
 use FrugalPhpPlugin\Orm\Repositories\AbstractRepository;
+use Ramsey\Uuid\UuidInterface;
 
 abstract class AbstractEntity implements EntityInterface
 {
@@ -23,11 +24,11 @@ abstract class AbstractEntity implements EntityInterface
             $value = $this->$property;
 
             $output[$property] = match (true) {
-                $value instanceof \Ramsey\Uuid\UuidInterface => $value->toString(),
+                $value instanceof UuidInterface => $value->toString(),
                 $value instanceof \BackedEnum => $value->value,
                 $value instanceof \DateTimeInterface => $value->format(DATE_ATOM),
                 is_object($value) && property_exists($value, 'value') => $value->value,
-                default => (string) $value,
+                default => is_null($value) ? null : (string) $value,
             };
         }
 

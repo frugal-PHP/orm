@@ -8,7 +8,8 @@
         "doctrine/orm": "^3.5",
         "doctrine/annotations": "^2.0",
         "doctrine/dbal": "^4.3",
-        "symfony/cache": "^7.3"
+        "symfony/cache": "^7.3",
+        "ramsey/uuid": "^4.9"
     },
     "autoload": {
         "psr-4": {

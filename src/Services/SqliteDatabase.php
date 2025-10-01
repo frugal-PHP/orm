@@ -48,7 +48,6 @@ final class SqliteDatabase implements DatabaseInterface
 
     public function getLastInsertId($result) : int
     {
-        var_dump($result->insertId); die;
         return $result->insertId;
     }
 }

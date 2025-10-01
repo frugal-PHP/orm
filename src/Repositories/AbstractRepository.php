@@ -134,11 +134,11 @@ abstract class AbstractRepository implements RepositoryInterface
     {
         $params = [];
         foreach (array_keys($this->entityFields) as $classFieldName) {
-            if (!isset($values[$classFieldName])) {
+            if (!array_key_exists($classFieldName, $values)) {
                 continue;
             }
 
-            $val = (string) $values[$classFieldName];
+            $val = $values[$classFieldName] === null ? null : (string) $values[$classFieldName];
 
             if(is_array($val)) {
                 foreach(array_values($val) as $index => $value) {
