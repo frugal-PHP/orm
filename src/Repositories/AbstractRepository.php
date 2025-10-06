@@ -2,24 +2,26 @@
 
 namespace FrugalPhpPlugin\Orm\Repositories;
 
+use DateTime;
 use FrugalPhpPlugin\Orm\Entities\AbstractEntity;
+use FrugalPhpPlugin\Orm\Entities\SoftDeleteTrait;
 use FrugalPhpPlugin\Orm\Interfaces\DatabaseInterface;
 use FrugalPhpPlugin\Orm\Interfaces\RepositoryInterface;
 use InvalidArgumentException;
 use React\Promise\PromiseInterface;
-use RuntimeException;
 
 abstract class AbstractRepository implements RepositoryInterface
 {
     protected array $entityFields;
     protected string $entityTableName;
+    protected string $managedEntityClassName;
 
     public function __construct(
         protected DatabaseInterface $db
     ) {
-        $entityClassName = $this->getManagedEntityClass();
-        $this->entityTableName = $entityClassName::getTableName();
-        $this->entityFields = $entityClassName::getFields();
+        $this->managedEntityClassName = $this->getManagedEntityClass();
+        $this->entityTableName = $this->managedEntityClassName::getTableName();
+        $this->entityFields = $this->managedEntityClassName::getFields();
     }
 
     abstract public function getManagedEntityClass() : string;
@@ -105,8 +107,16 @@ abstract class AbstractRepository implements RepositoryInterface
     }
 
     public function delete(string|int $entityId): PromiseInterface
-    {        
+    {     
         $parameters['id'] = $entityId;
+
+        // Managing soft delete
+        if (in_array(SoftDeleteTrait::class, class_uses($this->managedEntityClassName))) {
+            $query = $this->buildUpdateQuery();
+            $parameters = $this->buildParameters(['deletedAt' => new DateTime()]);
+
+            return $this->db->execute(query: $query, parameters: $parameters);
+        }
 
         return $this->db->execute(
             query: "DELETE FROM ".$this->entityTableName." WHERE id = :id",
