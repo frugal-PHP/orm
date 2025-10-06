@@ -16,7 +16,7 @@ abstract class AbstractEntity implements EntityInterface
     public function toDatabase(): array
     {
         $output = [];
-        foreach (static::getFields() as $property => $column) {
+        foreach (array_keys(static::getFields()) as $property) {
             if (!property_exists($this, $property)) {
                 continue;
             }
