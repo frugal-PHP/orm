@@ -33,5 +33,8 @@ class Plugin extends AbstractPlugin
         $frugalContainer = FrugalContainer::getInstance();
         $frugalContainer->set('orm', fn() => new SqliteDatabase(getenv('DATABASE_FILEPATH')));
         $frugalContainer->set('repositoryLocator', fn() => new RepositoryLocator());
+
+        // Force loading of database to improve perf since the first request
+        $frugalContainer->get('orm');
     }
 }
