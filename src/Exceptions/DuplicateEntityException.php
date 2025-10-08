@@ -2,10 +2,10 @@
 
 namespace FrugalPhpPlugin\Orm\Exceptions;
 
-use Frugal\Core\Exceptions\CustomException;
+use Frugal\Core\Exceptions\BusinessException;
 use React\Http\Message\Response;
 
-class DuplicateEntityException extends CustomException
+class DuplicateEntityException extends BusinessException
 {
     public function __construct(string $message = "Duplicate record, please adjust data")
     {

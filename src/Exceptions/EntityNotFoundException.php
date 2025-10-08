@@ -2,10 +2,10 @@
 
 namespace FrugalPhpPlugin\Orm\Exceptions;
 
-use Frugal\Core\Exceptions\CustomException;
+use Frugal\Core\Exceptions\BusinessException;
 use React\Http\Message\Response;
 
-class EntityNotFoundException extends CustomException
+class EntityNotFoundException extends BusinessException
 {
     public function __construct(?string $message = null)
     {
