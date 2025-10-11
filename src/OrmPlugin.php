@@ -8,11 +8,11 @@ use FrugalPhpPlugin\Orm\Commands\UpdateSchemaCommand;
 use FrugalPhpPlugin\Orm\Services\RepositoryLocator;
 use FrugalPhpPlugin\Orm\Services\SqliteDatabase;
 
-class Plugin extends AbstractPlugin
+class OrmPlugin extends AbstractPlugin
 {
     protected const PLUGIN_NAME = "Orm plugin";
 
-    public static function init() : void
+    public function init() : void
     {
         parent::init();
         self::loadCommands([
@@ -28,7 +28,7 @@ class Plugin extends AbstractPlugin
             );
     }
 
-    protected static function registerServices(): void
+    protected function registerServices(): void
     {
         $frugalContainer = FrugalContainer::getInstance();
         $frugalContainer->set('orm', fn() => new SqliteDatabase(getenv('DATABASE_FILEPATH')));
